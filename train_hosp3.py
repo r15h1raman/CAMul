@@ -24,7 +24,7 @@ parser.add_option("-e", "--epiweek", dest="epiweek", default="202140", type="str
 parser.add_option("--epochs", dest="epochs", default=1500, type="int")
 parser.add_option("--lr", dest="lr", default=1e-3, type="float")
 parser.add_option("--patience", dest="patience", default=100, type="int")
-parser.add_option("--tolerance", dest="tol", default=0.1, type="float")
+parser.add_option("--tolerance", dest="tol", default=0.05, type="float")
 parser.add_option("-d", "--day", dest="day_ahead", default=1, type="int")
 parser.add_option("-s", "--seed", dest="seed", default=0, type="int")
 parser.add_option("-b", "--batch", dest="batch_size", default=128, type="int")
