@@ -24,6 +24,7 @@ parser.add_option("-e", "--epiweek", dest="epiweek", default="202140", type="str
 parser.add_option("--epochs", dest="epochs", default=1500, type="int")
 parser.add_option("--lr", dest="lr", default=1e-3, type="float")
 parser.add_option("--patience", dest="patience", default=100, type="int")
+parser.add_option("--tolerance", dest="tol", default=0.05, type="float")
 parser.add_option("-d", "--day", dest="day_ahead", default=1, type="int")
 parser.add_option("-s", "--seed", dest="seed", default=0, type="int")
 parser.add_option("-b", "--batch", dest="batch_size", default=128, type="int")
@@ -31,7 +32,6 @@ parser.add_option("-m", "--save", dest="save_model", default="default", type="st
 parser.add_option("--start_model", dest="start_model", default="None", type="string")
 parser.add_option("--samples", dest="samples_past", default=5, type="int")
 parser.add_option("-c", "--cuda", dest="cuda", default=True, action="store_true")
-parser.add_option("--samplesmean", dest="samplesmean", default=True, action="store_true")
 parser.add_option("--start", dest="start_day", default=-120, type="int")
 
 (options, args) = parser.parse_args()
@@ -42,13 +42,13 @@ save_model_name_prefix = options.save_model
 start_model = options.start_model
 samples_past = options.samples_past
 cuda = options.cuda
-samplesmean = options.samplesmean
 start_day = options.start_day
 save_model_name = save_model_name_prefix + "_" + str(day_ahead)
 batch_size = options.batch_size
 lr = options.lr
 epochs = options.epochs
 patience = options.patience
+tol = options.tol
 
 # First do sequence alone
 # Then add exo features
@@ -177,12 +177,18 @@ def prefix_sequences(seq, day_ahead=day_ahead):
         Y[i] = seq[i + day_ahead, label_idx]
     return X, Y
 
+
 prev_preds = []
 for i in range(1, day_ahead):
-    with open(f"./hosp_predictions/{save_model_name_prefix}_{i}_predictions.pkl", "rb") as fl:
+    with open(
+        f"./tuning/hosp_predictions/{save_model_name_prefix}_{i}_predictions.pkl", "rb"
+    ) as fl:
         prev_preds.append(pickle.load(fl))
-if(day_ahead!=1):
+
+
+if day_ahead != 1:
     prev_preds = scaler.transform_idx(np.array(prev_preds), idx=label_idx)
+
 
 def prefix_sequences_preds(seq, state, day_ahead=day_ahead):
     """
@@ -190,35 +196,40 @@ def prefix_sequences_preds(seq, state, day_ahead=day_ahead):
     """
     l = len(seq)
     X, Y = [], []
-    for i in range(l - day_ahead):
-        x = np.zeros((l, seq.shape[-1]))
-        x[(l - i - 1) :, :] = seq[: i + 1, :]
-        X.append(x)
-        Y.append(seq[i + day_ahead, label_idx])
     for _ in range(samples_past):
-        for i in range(l - day_ahead, l-1):
+        for i in range(l - day_ahead, l - 1):
             x = np.zeros((l, seq.shape[-1]))
             x[(l - i - 1) :, :] = seq[: i + 1, :]
             X.append(x)
-            if samplesmean:
-                Y.append(np.mean(prev_preds[i - l + day_ahead][state, :]))
-            else:
-                Y.append(np.random.choice(prev_preds[i - l + day_ahead][state, :]))
-
+            Y.append(prev_preds[i - l + day_ahead][state, :])
     return np.array(X), np.array(Y)
 
 
 X, Y = [], []
+X_prev_preds, Y_prev_preds = [], []
 for i, st in enumerate(states):
-    x, y = prefix_sequences_preds(raw_data[i], i)
+    x, y = prefix_sequences(raw_data[i])
     X.append(x)
     Y.append(y)
+    x, y = prefix_sequences_preds(raw_data[i], i)
+    X_prev_preds.append(x)
+    Y_prev_preds.append(y)
+
 
 X_train, Y_train = np.concatenate(X), np.concatenate(Y)
+X_prev_preds_train, Y_prev_preds_train = (
+    np.concatenate(X_prev_preds),
+    np.concatenate(Y_prev_preds),
+)
 
 # Shuffle data
 perm = np.random.permutation(len(X_train))
 X_train, Y_train = X_train[perm], Y_train[perm]
+perm1 = np.random.permutation(len(X_prev_preds_train))
+X_prev_preds_train, Y_prev_preds_train = (
+    X_prev_preds_train[perm1],
+    Y_prev_preds_train[perm1],
+)
 
 # Reference sequences
 X_ref = raw_data[:, :, label_idx]
@@ -229,6 +240,14 @@ X_val, Y_val = X_train[: int(len(X_train) * frac)], Y_train[: int(len(X_train) *
 X_train, Y_train = (
     X_train[int(len(X_train) * frac) :],
     Y_train[int(len(X_train) * frac) :],
+)
+X_prev_preds_val, Y_prev_preds_val = (
+    X_prev_preds_train[: int(len(X_prev_preds_train) * frac)],
+    Y_prev_preds_train[: int(len(X_prev_preds_train) * frac)],
+)
+X_prev_preds_train, Y_prev_preds_train = (
+    X_prev_preds_train[int(len(X_prev_preds_train) * frac) :],
+    Y_prev_preds_train[int(len(X_prev_preds_train) * frac) :],
 )
 
 
@@ -287,17 +306,44 @@ class SeqData(torch.utils.data.Dataset):
         )
 
 
-train_dataset = SeqData(X_train, Y_train)
-val_dataset = SeqData(X_val, Y_val)
+class SeqBootData(torch.utils.data.Dataset):
+    def __init__(self, X, Y, X_pred, Y_pred):
+        self.X = X
+        self.Y = Y[:, None]
+        self.X_pred = X_pred
+        self.Y_pred = Y_pred[:, :, None]
+
+    def __len__(self):
+        return self.X.shape[0] + self.X_pred.shape[0]
+
+    def __getitem__(self, idx):
+        if idx < self.X.shape[0]:
+            return (
+                float_tensor(self.X[idx, :, :]),
+                float_tensor(self.Y[idx]),
+            )
+        else:
+            idx2 = np.random.randint(self.Y_pred.shape[1])
+            return (
+                float_tensor(self.X_pred[idx - self.X.shape[0], :, :]),
+                float_tensor(self.Y_pred[idx - self.X.shape[0], idx2]),
+            )
+
+if day_ahead > 1:
+    train_dataset = SeqBootData(X_train, Y_train, X_prev_preds_train, Y_prev_preds_train)
+    val_dataset = SeqBootData(X_val, Y_val, X_prev_preds_val, Y_prev_preds_val)
+else:
+    train_dataset = SeqData(X_train, Y_train)
+    val_dataset = SeqData(X_val, Y_val)
 train_loader = torch.utils.data.DataLoader(
-    train_dataset, batch_size=batch_size, shuffle=True
+    train_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=lambda id: np.random.seed(torch.initial_seed() // 2*32 + id)
 )
 val_loader = torch.utils.data.DataLoader(
-    val_dataset, batch_size=batch_size, shuffle=True
+    val_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=lambda id: np.random.seed(torch.initial_seed() // 2*32 + id)
 )
 
 if start_model != "None":
-    load_model("./hosp_models", file=start_model)
+    load_model("./tuning/hosp_models", file=start_model)
     print("Loaded model from", start_model)
 
 opt = torch.optim.Adam(
@@ -383,29 +429,36 @@ def test_step(X, X_ref, samples=1000):
 
 min_val_err = np.inf
 min_val_epoch = 0
+all_losses = []
 for ep in range(epochs):
     print(f"Epoch {ep+1}")
     train_loss, train_err, yp, yt = train_step(train_loader, X_train, Y_train, X_ref)
     print(f"Train loss: {train_loss:.4f}, Train err: {train_err:.4f}")
     val_err, yp, yt = val_step(val_loader, X_val, Y_val, X_ref)
     print(f"Val err: {val_err:.4f}")
+    all_losses.append(val_err)
     if val_err < min_val_err:
         min_val_err = val_err
-        save_model("./hosp_models")
+        min_val_epoch = ep
+        save_model("./tuning/hosp_models")
         print("Saved model")
     print()
     print()
-    if ep > 100 and ep - min_val_epoch > patience:
+    if (
+        ep > 100
+        and ep - min_val_epoch > patience
+        and min(all_losses[-patience:]) > min_val_err * (1 + tol)
+    ):
         break
 
 # Now we get results
-load_model("./hosp_models")
+load_model("./tuning/hosp_models")
 X_test = raw_data
 Y_test = test_step(X_test, X_ref, samples=2000).squeeze()
 
 Y_test_unnorm = scaler.inverse_transform_idx(Y_test, label_idx)
 
 # Save predictions
-os.makedirs(f"./tuning", exist_ok=True)
-with open(f"./tuning/{save_model_name}_predictions.pkl", "wb") as f:
+os.makedirs(f"./tuning/hosp_predictions", exist_ok=True)
+with open(f"./tuning/hosp_predictions/{save_model_name}_predictions.pkl", "wb") as f:
     pickle.dump(Y_test_unnorm, f)
