@@ -21,7 +21,7 @@ from models.fnpmodels import RegressionFNP2
 
 parser = OptionParser()
 parser.add_option("-e", "--epiweek", dest="epiweek", default="202140", type="string")
-parser.add_option("--epochs", dest="epochs", default=1500, type="int")
+parser.add_option("--epochs", dest="epochs", default=750, type="int")
 parser.add_option("--lr", dest="lr", default=1e-3, type="float")
 parser.add_option("--patience", dest="patience", default=100, type="int")
 parser.add_option("--tolerance", dest="tol", default=0.05, type="float")
@@ -30,9 +30,9 @@ parser.add_option("-s", "--seed", dest="seed", default=0, type="int")
 parser.add_option("-b", "--batch", dest="batch_size", default=128, type="int")
 parser.add_option("-m", "--save", dest="save_model", default="default", type="string")
 parser.add_option("--start_model", dest="start_model", default="None", type="string")
-parser.add_option("--samples", dest="samples_past", default=5, type="int")
+parser.add_option("--samples", dest="samples_past", default=1, type="int")
 parser.add_option("-c", "--cuda", dest="cuda", default=True, action="store_true")
-parser.add_option("--start", dest="start_day", default=-120, type="int")
+parser.add_option("--start", dest="start_day", default=-60, type="int")
 
 (options, args) = parser.parse_args()
 epiweek = options.epiweek
