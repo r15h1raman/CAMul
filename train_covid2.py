@@ -21,7 +21,7 @@ from models.fnpmodels import RegressionFNP2
 
 parser = OptionParser()
 parser.add_option("-e", "--epiweek", dest="epiweek", default="202113", type="string")
-parser.add_option("--epochs", dest="epochs", default=1500, type="int")
+parser.add_option("--epochs", dest="epochs", default=750, type="int")
 parser.add_option("--lr", dest="lr", default=1e-3, type="float")
 parser.add_option("--patience", dest="patience", default=100, type="int")
 parser.add_option("--tolerance", dest="tol", default=0.1, type="float")
@@ -365,8 +365,8 @@ for ep in range(epochs):
         print("Saved model")
     print()
     print()
-    if ep > 100 and ep - min_val_epoch > patience and min(all_losses[-patience:]) > min_val_err(1. + tol):
-        break
+#    if ep > 100 and ep - min_val_epoch > patience and min(all_losses[-patience:]) > min_val_err(1. + tol):
+#        break
 
 # Now we get results
 load_model("./mort_models")
