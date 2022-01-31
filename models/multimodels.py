@@ -440,14 +440,14 @@ class Decoder(nn.Module):
 
 def test_latent():
     # Define models
-    model = LatentEncoder(10, [12, 15], 20).to("cuda")
+    model = LatentEncoder(10, [12, 14], 20).to("cuda")
     inp = torch.rand(50, 10).to("cuda")
     out = model(inp)
     return out
 
 
 def test_corr():
-    model = CorrEncoder(20, 20, 25, 25, 15).to("cuda")
+    model = CorrEncoder(20, 20, 25, 25, 14).to("cuda")
     ref_stoc, ref_det = torch.rand(10, 25).to("cuda"), torch.rand(10, 25).to("cuda")
     inp_stoc, inp_det = torch.rand(50, 20).to("cuda"), torch.rand(50, 20).to("cuda")
     out = model(ref_stoc, inp_stoc, ref_det, inp_det)
@@ -456,9 +456,9 @@ def test_corr():
 
 
 def test_decoder():
-    model = Decoder(15, 15, 20, 30, 1).to("cuda")
-    zs = torch.rand(10, 4, 15).to("cuda")
-    sRs = torch.rand(10, 4, 15).to("cuda")
+    model = Decoder(14, 14, 20, 30, 1).to("cuda")
+    zs = torch.rand(10, 4, 14).to("cuda")
+    sRs = torch.rand(10, 4, 14).to("cuda")
     lat = torch.rand(10, 30).to("cuda")
     y = torch.rand(10, 1).to("cuda")
     out = model(zs, sRs, lat, y)
