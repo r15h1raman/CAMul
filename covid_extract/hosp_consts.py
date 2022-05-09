@@ -11,7 +11,7 @@ include_cols = [
     "cdc_hospitalized",
     "death_jhu_incidence",
 #     "dex_a",
-    "apple_mobility",
+#     "apple_mobility",
     "fb_survey_wcli",
     "fb_survey_wili",
 ]
@@ -29,7 +29,7 @@ include_cols_flu = [
     "cdc_hospitalized",
     "death_jhu_incidence",
 #     "dex_a",
-    "apple_mobility",
+#     "apple_mobility",
     "fb_survey_wcli",
     "fb_survey_wili",
     "cdc_flu_hosp",
@@ -52,7 +52,7 @@ include_cols_old = [
     "hospitalizedIncrease",
     "death_jhu_incidence",
 #     "dex_a",
-    "apple_mobility",
+#     "apple_mobility",
     "Number of Facilities Reporting",
     "CLI Percent of Total Visits",
 ]
