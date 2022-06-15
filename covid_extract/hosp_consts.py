@@ -51,7 +51,7 @@ include_cols_old = [
     "recovered",
     "hospitalizedIncrease",
     "death_jhu_incidence",
-#     "dex_a",
+    "dex_a",
 #     "apple_mobility",
     "Number of Facilities Reporting",
     "CLI Percent of Total Visits",
