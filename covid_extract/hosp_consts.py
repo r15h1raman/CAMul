@@ -12,8 +12,8 @@ include_cols = [
     "death_jhu_incidence",
 #     "dex_a",
 #     "apple_mobility",
-#    "fb_survey_wcli",
-#    "fb_survey_wili",
+    "fb_survey_wcli",
+    "fb_survey_wili",
 ]
 
 include_cols_flu = [
@@ -30,8 +30,8 @@ include_cols_flu = [
     "death_jhu_incidence",
 #     "dex_a",
 #     "apple_mobility",
-#    "fb_survey_wcli",
-#    "fb_survey_wili",
+    "fb_survey_wcli",
+    "fb_survey_wili",
     "cdc_flu_hosp",
 ]
 
