@@ -25,7 +25,7 @@ include_cols_flu = [
     "residential_percent_change_from_baseline",
     "covidnet",
     "positiveIncr",
-    "cdc_negativeIncr",
+    #"cdc_negativeIncr",
     "cdc_hospitalized",
     "death_jhu_incidence",
 #     "dex_a",
