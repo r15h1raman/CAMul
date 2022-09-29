@@ -7,6 +7,8 @@ for b in "${batch[@]}"
 do
   for w in "${weeks[@]}"
   do
+      echo "$b"
+      echo "$w"
       python -u train_hosp.py -e "$w" -b "$b" --epochs 5000 -lr $1 --patience $2 -m "$w"_$1_$2_"$b"
   done 
 done
