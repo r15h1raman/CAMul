@@ -3,5 +3,6 @@ declare -a weeks=('202150' '202151' '202152' '202201' '202202' '202203' '202204'
 
 for w in "${weeks[@]}"
 do
+    echo "$w"
     ./scripts/hosp_preprocess.sh "$w"
 done
