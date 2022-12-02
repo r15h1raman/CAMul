@@ -27,7 +27,8 @@ include_cols = [
 #    "symptom:Dizziness",
 #    "symptom:Confusion",
 #    "symptom:Generalized tonic–clonic seizure",
-    "symptom:Weakness",
+#    "symptom:Weakness",
+    "ili",
 ]
 
 include_cols_flu = [
@@ -47,6 +48,7 @@ include_cols_flu = [
 #    "fb_survey_wcli",
 #    "fb_survey_wili",
     "cdc_flu_hosp",
+    "ili",
 #    "symptom:Fever",
 #    "symptom:Low-grade fever",
 #    "symptom:Cough",
